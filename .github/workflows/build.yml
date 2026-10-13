@@ -1,0 +1,95 @@
+name: Bursztyn OS - Build
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write 
+
+jobs:
+  build:
+    name: Build Bursztyn OS (x86_64)
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+
+    steps:
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --needed --noconfirm \
+            base-devel \
+            git \
+            grub \
+            xorriso \
+            mtools \
+            qemu-system-x86 \
+            edk2-ovmf \
+            python \
+            nasm \
+            acpica
+
+      - name: Checkout current repository
+        uses: actions/checkout@v4
+
+      - name: Configure Git safe directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Build kernel and hybrid BIOS/UEFI ISO
+        run: |
+          set -euxo pipefail
+
+          make CROSS= clean
+          make CROSS= iso
+
+      - name: Verify build outputs
+        run: |
+          set -euxo pipefail
+
+          test -s system_operacyjny.bin
+          test -s BursztynOS.iso
+
+          file system_operacyjny.bin BursztynOS.iso
+
+          grub-file --is-x86-multiboot2 system_operacyjny.bin
+
+          echo "Build successful."
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bursztyn-os-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            system_operacyjny.bin
+            BursztynOS.iso
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.sha }}
+          name: BursztynOS build for commit ${{ github.sha }}
+          prerelease: false
+          make_latest: true
+          generate_release_notes: true
+          body: |
+            # Build of the last known version of BursztynOS. 
+            
+            Code slightly changed to fix building (added `memset` implementation) and add GitHub actions.
+            
+            Now proprietary and paid operating system, instructions for paying for the ISO at https://bursztynos.dimitalart.pl/
+            
+            If someone has access to the ISO files or to a newer source code, contact me on Discord `gorciu_official`, I'd be very happy.
+
+            **Confusing filenames:**
+            
+            - **system_operacyjny.bin** is the **kernel** file
+            - **BursztynOS.iso** contains a whole build of the OS
+
+            **Github support is W and restored the source code after I formatted my hard drive, go thank them**
+
+            If you want to talk to me for some reason, reach out in Discord - `gorciu_official`.
+          files: |
+            system_operacyjny.bin
+            BursztynOS.iso

@@ -1,3 +1,5 @@
+> [!CAUTION]
+> Jest to częściowo zmieniony kod, by w ogóle się budował, pozdrawiam ;)
 
 # Bursztyn OS 
 

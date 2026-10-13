@@ -31,6 +31,27 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void *memset(void *dest, int value, size_t count)
+{
+    unsigned char *p = (unsigned char *)dest;
+
+    for (size_t i = 0; i < count; ++i) {
+        p[i] = (unsigned char)value;
+    }
+
+    return dest;
+}
+
+#ifdef __cplusplus
+}
+#endif
+
 /* =========================================================================
  * 1. NAGLOWEK .BUR
  * ========================================================================= */
